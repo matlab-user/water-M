@@ -1,6 +1,6 @@
 <?php
 
-	//require_once( "./parse_data.php" );
+	require_once( "./parse_data.php" );
 		
 	date_default_timezone_set( 'Asia/Chongqing' );
 	
@@ -41,15 +41,14 @@
         foreach( $read as $read_sock ) {
             // read until newline or 1024 bytes
             // socket_read while show errors when the client is disconnected, so silence the error messages
-            $data = @socket_read( $read_sock, 1300 );
+            $data = @socket_read( $read_sock, 1300, PHP_BINARY_READ );
             // check if the client is disconnected
             if( $data===false ) {
                 $key = array_search( $read_sock, $clients );
+				$k2 = array_search( $read_sock, $sock_ids );
 				socket_close( $read_sock );
                 unset( $clients[$key] );				
 	
-				$k2 = array_search( $read_sock, $sock_ids );
-				socket_close( $read_sock );
 				echo 'client disconnected  data: '.$ds[$k2]."\t\t".date("Y-m-d H:i:s")."\r\n";	
 				unset( $sock_ids[$k2] );
 				unset( $ds[$k2] );	
@@ -57,7 +56,6 @@
                 continue;
             }
 			else {
-				//$data = trim( $data );
 				$k2 = array_search( $read_sock, $sock_ids );
 				if( !empty( $data ) ) {
 					if( empty($ds[$k2]) )
@@ -66,30 +64,33 @@
 						$ds[$k2] = $ds[$k2].$data;	
 					
 					// 处理数据
+					//echo "e1-\t\tclient send the data: ".$ds[$k2]."\t\t".date("Y-m-d H:i:s")."\r\n";
 					if( substr($data,-2)==="\r\n" ) {
 						error_log( "e1-\t\t$ds[$k2]\t\t".date("Y-m-d H:i:s")."\r\n", 3, '/tmp/water-M.log' );
+						//process_data( $ds[$k2] );
 						$ds[$k2] = '';
 					}
 				}
 				else {
-					echo 'client connected  data: '.$ds[$k2]."\t\t".date("Y-m-d H:i:s")."\r\n";
-					
+					echo "e2-\t\tclient has send all data: ".$ds[$k2]."\t\t".date("Y-m-d H:i:s")."\r\n";
+							
+					// 处理数据
+					if( substr($data,-2)==="\r\n" ) {
+						error_log( "e2-\t\t$ds[$k2]\t\t".date("Y-m-d H:i:s")."\r\n", 3, '/tmp/water-M.log' );
+						//process_data( $ds[$k2] );
+					}
+
 					$key = array_search( $read_sock, $clients );
 					socket_close( $read_sock );
 					unset( $clients[$key] );
-					
-					// 处理数据
-					error_log( "e2-\t\t$ds[$k2]\t\t".date("Y-m-d H:i:s")."\r\n", 3, '/tmp/water-M.log' );
-					
 					unset( $sock_ids[$k2] );
 					unset( $ds[$k2] );
-					echo "client has send all the data!\t\t".date("Y-m-d H:i:s")."\r\n";
 				}
 					
 			}
 			
-		}
-			
+		}			
+		
 	}
 	
 	socket_close( $sock );
