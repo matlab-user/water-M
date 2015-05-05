@@ -1,5 +1,6 @@
 <?php
-
+	require_once( "./clear.php" );
+	
 	$mysql_user = 'root';
 	$mysql_pass = 'blue';
 	
@@ -32,7 +33,7 @@
 		$CP_data = array();
 		$res = parse_CP( $dv->CP, $CP_data );
 		if( $res>0 ) {							// 向数据库中写入数据
-			// var_dump( $CP_data );
+			//var_dump( $CP_data );
 			// 注册设备
 			$con = touch_mysql();
 			$query_str = "CALL add_belam_dev( $dv->MN )";
@@ -43,14 +44,23 @@
 				// 首先解码时间
 				$data_time = strtotime( $CP_data['DataTime'] );
 				unset( $CP_data['DataTime'] );
+				if( $data_time<time() )
+					$data_time = time();
 				
 				foreach ( $CP_data as $key => $value) {
 					$key_1 = strtok( $key, "-" );
 					$key_2 = strtok( "-" );
 					
+					if( empty($key_1) || empty($key_2) )
+						continue;
+					
+					$r_num = mt_rand( 1, 6 );
+					if( $r_num==1 )
+						clear_dev_d_id( $dv->MN, $key );
+				
 					$remark = '';
 					$unit = get_uint_and_name( $key_1, $remark );
-	
+
 					switch( $key_2 ) {
 						case 'Flag':
 							$unit = 'sys/null';
@@ -74,8 +84,9 @@
 
 	function parse_data( $data_str, &$data_val ) {
 		// 设置时区为 0 时区
-		date_default_timezone_set ( 'UTC' );	
-		
+		//date_default_timezone_set( 'UTC' );
+		date_default_timezone_set( 'Asia/Chongqing' );			
+
 		$head = substr( $data_str , 0, 2 );
 		switch( $head ) {
 			case '##':
@@ -170,9 +181,7 @@
 			while( $tok!==false ) {
 				get_name_value( $tok, $nv );
 				$CP_data[$nv->name] = $nv->value;
-				$tok = strtok( $pal );
-				
-				
+				$tok = strtok( $pal );	
 			}
 		}
 		else
@@ -208,6 +217,7 @@
 		$row = mysql_fetch_array( $res );
 		$name = $row[1];
 		mysql_free_result( $res );
+		mysql_close( $con );
 		return $row[0];
 	}
 	
