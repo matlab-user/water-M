@@ -68,6 +68,10 @@ F3:BEGIN
 END F3
 |
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/master
 DELIMITER ;
 
 /*
