@@ -12,10 +12,8 @@ USE data_db;
 
 DELIMITER |
 /*
-	自动根据设备的 gid1 号 和待注册参数的 remark 值，判断此参数是否已经注册。
+	自动根据设备的 gid1 号 和待注册参数的 v_name值，判断此参数是否已经注册。
 	如何未注册，自动注册，同时注册其单位、名称等。
-	
-	remark 为数据帧中对于的参数字段名称
 */
 DROP PROCEDURE IF EXISTS add_dev_p;
 CREATE PROCEDURE add_dev_p( IN gid1 VARCHAR(32) CHARACTER SET utf8, IN in_name VARBINARY(64), IN in_remark VARBINARY(200), IN in_unit VARBINARY(64) )
@@ -24,7 +22,7 @@ F1:BEGIN
 	SET @new_did = '';
 	SET @unit_id = '';
 	
-	SELECT d_id FROM dev_data_unit WHERE dev_id=gid1 AND remark=in_remark;
+	SELECT d_id FROM dev_data_unit WHERE dev_id=gid1 AND v_name=in_name;
 	IF FOUND_ROWS()<= 0 THEN 
 	
 		/*  注册新参数  */
@@ -55,6 +53,19 @@ F2:BEGIN
 	
 	INSERT INTO dev_db.dev_table ( guid1, name, model, maker, state, owner, t, timezone ) VALUES ( gid1, '水质监测仪', 'BEW', '四川碧朗科技', 'running', 'belam_huj@163.com', 'up', 8 );
 END F2
+|
+
+DROP PROCEDURE IF EXISTS save_belam_data;
+CREATE PROCEDURE save_belam_data( IN gid1 VARCHAR(32) CHARACTER SET utf8, IN in_name VARCHAR(64) CHARACTER SET utf8, IN val VARBINARY(200), IN t DOUBLE )
+F3:BEGIN
+	SET @did = '';
+	SELECT d_id INTO @did FROM dev_data_unit WHERE dev_id=gid1 AND v_name=in_name;
+	IF FOUND_ROWS()<=0 THEN
+		LEAVE F3;
+	END IF;
+	
+	CALL user_db.save_data( gid1, @did, val, t );
+END F3
 |
 
 DELIMITER ;
@@ -122,6 +133,7 @@ INSERT INTO data_db.pollution_table ( code, v_name, field, unit, type ) VALUES (
 INSERT INTO data_db.pollution_table ( code, v_name, field, unit, type ) VALUES ( '37', '林格曼黑度', 	'废气', 'mg/m<sup>3</sup>', 'N1' );
 INSERT INTO data_db.pollution_table ( code, v_name, field, unit, type ) VALUES ( '99', '其它污染物', 	'废气', 'mg/m<sup>3</sup>', 'N1' );
 
+INSERT INTO data_db.pollution_table ( code, v_name, field, unit, type ) VALUES ( 'B01', '污水', '污水', '吨', 'N2.1' );
 INSERT INTO data_db.pollution_table ( code, v_name, field, unit, type ) VALUES ( '001', 'pH值', '污水', ' ', 'N2.1' );
 INSERT INTO data_db.pollution_table ( code, v_name, field, unit, type ) VALUES ( '002', '色度', '污水', '色度单位', 'N5.1' );
 INSERT INTO data_db.pollution_table ( code, v_name, field, unit, type ) VALUES ( '003', '悬浮物', '污水', 						'mg/l', 'N5.1' );

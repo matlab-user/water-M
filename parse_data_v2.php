@@ -25,7 +25,7 @@
 		public $CP = '';
 	}
 	
-	function process_data( $data_str ) {
+	function process_data_v2( $data_str ) {
 		
 		$dv = new data_val();
 		parse_data( $data_str, $dv );
@@ -34,6 +34,10 @@
 		$res = parse_CP( $dv->CP, $CP_data );
 		if( $res>0 ) {							// 向数据库中写入数据
 			//var_dump( $CP_data );
+			
+			if( $dv->CN!=2051 && $dv->CN!=2061 )		// 仅处理分钟、小时数据
+				return;
+			
 			// 注册设备
 			$con = touch_mysql();
 			$query_str = "CALL add_belam_dev( $dv->MN )";
@@ -58,21 +62,29 @@
 					if( $r_num==1 )
 						clear_dev_d_id( $dv->MN, $key );
 				
-					$remark = '';
-					$unit = get_uint_and_name( $key_1, $remark );
+					$name = '';
+					$unit = get_uint_and_name( $key_1, $name );
 
 					switch( $key_2 ) {
-						case 'Flag':
-							$unit = 'sys/null';
-							add_dev_p( $dv->MN, $key, $remark, $unit );
-							save_belam_data( $dv->MN, $key, ord($value), $data_time );
+						case 'Avg':
+							if( $key_1!='B01' && $key_1!='011' && $key_1!='060' )
+								break;
+							
+							if( empty($unit) )
+								$unit = 'sys/null';
+							
+							if( $dv->CN==2051)
+								$name .= '-分钟';
+							
+							if( $dv->CN==2061)
+								$name .= '-小时';
+							
+							//echo "$name \r\n";
+							add_dev_p( $dv->MN, $name, $key, $unit );
+							save_belam_data( $dv->MN, $name, ord($value), $data_time );
 							break;
 							
 						default:
-							if( empty($unit) )
-								$unit = 'sys/null';
-							add_dev_p( $dv->MN, $key, $remark, $unit );
-							save_belam_data( $dv->MN, $key, $value, $data_time );
 							break;
 					}
 					
@@ -165,7 +177,7 @@
 	
 	
 	function parse_CP( $data_str, &$CP_data ) {
-		
+
 		if( empty($data_str) )
 			return -1;
 		

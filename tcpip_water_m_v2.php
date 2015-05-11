@@ -1,6 +1,6 @@
 <?php
 
-	require_once( "./parse_data.php" );
+	require_once( "./parse_data_v2.php" );
 		
 	date_default_timezone_set( 'Asia/Chongqing' );
 	
@@ -67,7 +67,7 @@
 					//echo "e1-\t\tclient send the data: ".$ds[$k2]."\t\t".date("Y-m-d H:i:s")."\r\n";
 					if( substr($data,-2)==="\r\n" ) {
 						error_log( "e1-\t\t$ds[$k2]\t\t".date("Y-m-d H:i:s")."\r\n", 3, '/tmp/water-M.log' );
-						process_data( $ds[$k2] );
+						process_data_v2( $ds[$k2] );
 						$ds[$k2] = '';
 					}
 				}
@@ -77,7 +77,7 @@
 					// 处理数据
 					if( substr($data,-2)==="\r\n" ) {
 						error_log( "e2-\t\t$ds[$k2]\t\t".date("Y-m-d H:i:s")."\r\n", 3, '/tmp/water-M.log' );
-						process_data( $ds[$k2] );
+						process_data_v2( $ds[$k2] );
 					}
 
 					$key = array_search( $read_sock, $clients );
